@@ -1,0 +1,35 @@
+on: 
+    push:
+        branches:
+            - master
+
+jobs:
+    release:
+        name: Release
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v2
+              with:
+                fetch-depth: 0
+
+            - name: Read Node.js version from file
+              id: read-node-version
+              run: |
+                NODE_VERSION=$(cat .tool-versions | awk '{$1=$1};1')
+                echo "::set-output name=node_version::$NODE_VERSION"
+        
+            - name: Setup NodeJS
+              uses: actions/setup-node@v2
+              with:
+                node-version: ${{ steps.read-node-version.outputs.node_version }}
+
+            - name: Install depedencies
+              run: npm ci
+
+            - name: Release
+              env:
+                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+              run: npx semantic-release
